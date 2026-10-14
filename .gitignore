@@ -1,0 +1,8 @@
+# Python (Pyodide no lo usa, pero por si se corre Python localmente)
+__pycache__/
+*.pyc
+
+# Editor / SO
+.DS_Store
+Thumbs.db
+*.swp
