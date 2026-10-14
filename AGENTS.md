@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Estado del proyecto
-- Sitio estático sin build ni repo git todavía. Archivos: `index.html`, `styles.css`, `app.js`, `stats_core.py`. Para publicar: `git init` + GitHub Pages.
+- Sitio estático, sin build. Repo: `https://github.com/estebanlab2021/inferencia_estadistica` (rama `main`), desplegado con GitHub Pages en `https://estebanlab2021.github.io/inferencia_estadistica/`. Archivos: `index.html`, `styles.css`, `app.js`, `stats_core.py`, `README.md`.
 - La especificación técnica detallada (arquitectura, CDNs, flujo, UI, contrato de `stats_core.py`) está en `spec.md` — es la fuente de verdad del producto.
 - Para probar localmente: `python -m http.server` en este directorio y abrir `http://localhost:8000`. Pyodide carga `stats_core.py` vía `fetch`, así que **no funciona con `file://`**.
 

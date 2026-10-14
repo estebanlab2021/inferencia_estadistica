@@ -6,6 +6,7 @@ El proyecto debe autogenerarse con la siguiente estructura limpia y estática:
 - `styles.css` -> Estilos minimalistas y limpios.
 - `app.js` -> Manejo del DOM, carga de Pyodide, y puente entre inputs y Python.
 - `stats_core.py` -> Núcleo de cálculo estadístico en Python puro (sin dependencias externas complejas, solo matemática nativa de Python y `scipy` si Pyodide la incluye por defecto, o fórmulas explícitas).
+- `README.md` -> Documentación del proyecto para usuarios y docentes.
 
 ## 2. Flujo de Inicialización de la Aplicación
 1. El usuario abre `index.html`.
