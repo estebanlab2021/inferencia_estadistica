@@ -241,6 +241,13 @@ function renderInputs(testId) {
           sdField("sd2_c", "Desviación estándar poblacional 2 (σ₂)", "Desviación estándar poblacional 2 (σ₂)", "16")) +
       "</div>" +
       '<div id="var-desconocida" class="var-bloque">' +
+      /* Toggle de igualdad de varianzas (solo dos medias) */
+      (uno
+        ? ""
+        : '<fieldset><legend>Varianzas poblacionales (desconocidas)</legend>' +
+          '<label><input type="radio" name="varianzas_iguales" value="iguales" checked> Iguales (varianza agrupada S_p)</label>' +
+          '<label><input type="radio" name="varianzas_iguales" value="desiguales"> Desiguales (t de Welch)</label>' +
+          '<p class="hint">Con varianzas desiguales se aplica el <b>t de Welch</b>: SE sin agrupar y grados de libertad de Welch-Satterthwaite.</p></fieldset>') +
       '<div class="sd-toggle" role="radiogroup" aria-label="Tipo de desviación estándar">' +
       '<input type="radio" name="tipo_sd" id="sd-s" value="S">' +
       '<label for="sd-s">S<span>Desv. estándar muestral<br>(varianza con n)</span></label>' +
@@ -308,6 +315,11 @@ function gatherPayload(testId) {
       payload.varianzas_conocidas = conocida;
       payload.sd1 = parseFloat($("#" + (conocida ? "sd1_c" : "sd1_d")).value);
       payload.sd2 = parseFloat($("#" + (conocida ? "sd2_c" : "sd2_d")).value);
+      if (!conocida) {
+        // Con σ desconocida: ¿varianzas iguales (agrupada) o desiguales (Welch)?
+        const ig = document.querySelector('input[name="varianzas_iguales"]:checked');
+        payload.varianzas_iguales = !ig || ig.value === "iguales";
+      }
     }
     // Con varianza conocida el tipo de SD es irrelevante para Python.
     payload.tipo_sd = conocida
@@ -531,13 +543,16 @@ function renderResults(r) {
     '<div class="bloque"><h3>2. Error estándar</h3><p>$$' + L.se + "$$</p></div>" +
     '<div class="bloque"><h3>3. Sustitución</h3><p>$$' + L.sustituida + "$$</p></div>" +
     '<div class="bloque"><h3>4. Resultado</h3><p>$$' + L.resultado + "$$</p></div>" +
-    '<div class="bloque"><h3>5. p-valor</h3><p>$$' + L.p_valor + "$$</p></div>";
+    (L.gl
+      ? '<div class="bloque"><h3>5. Grados de libertad (Welch)</h3><p>$$' + L.gl + "$$</p></div>"
+      : "") +
+    '<div class="bloque"><h3>' + (L.gl ? "6" : "5") + '. p-valor</h3><p>$$' + L.p_valor + "$$</p></div>";
 
   const criticos = r.valores_criticos.map((c) => c.toFixed(4)).join("  /  ");
   const rechazar = r.decision === "rechazar";
   $("#tabla-resultados").innerHTML =
     '<table class="tabla">' +
-    "<tr><td>Distribución</td><td>" + r.distribucion + (r.gl ? " (gl = " + r.gl + ")" : "") + "</td></tr>" +
+    "<tr><td>Distribución</td><td>" + r.distribucion + (r.gl ? " (gl = " + r.gl.toFixed(2) + ")" : "") + "</td></tr>" +
     "<tr><td>Estadístico calculado</td><td>" + r.estadistico.toFixed(4) + "</td></tr>" +
     "<tr><td>p-valor</td><td>" + r.p_valor.toFixed(4) + "</td></tr>" +
     "<tr><td>Valor(es) crítico(s) (α = " + r.alpha + ")</td><td>" + criticos + "</td></tr>" +

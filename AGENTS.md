@@ -11,9 +11,9 @@
 - ANOVA: los inputs son **dinámicos** (selector de k, y por tratamiento una lista de inputs numéricos con botones ＋/−); `n_i` se deduce de los valores digitados y `cacheGrupos` preserva los datos al cambiar k. El panel de alternativas se oculta en ANOVA (H₁ fija).
 - El boxplot de ANOVA usa el plugin **@sgratzl/chartjs-chart-boxplot** (CDN jsDelivr, UMD: `build/index.umd.min.js`, global `ChartBoxPlot`); el UMD **sí auto-registra** los controladores en el `Chart` global (la advertencia de "no auto-registra" del README aplica solo al build ESM). `renderBoxplot` crea el gráfico en `try/catch` y muestra un mensaje si el plugin no cargó. Cada tratamiento tiene **color propio**: paleta de 8 colores (`PALETA`) pasada como arreglos indexables a `backgroundColor`/`borderColor`/`outlierBackgroundColor`; la línea de mediana es gris oscuro fijo.
 - Convención de los PDFs (Prof. S. Araya Pizarro, U. de La Serena): con σ desconocida se usa **S_c (cuasivarianza, /(n−1))**: t = (X̄−μ₀)/(S_c/√n). La opción S (varianza muestral, /n) es la ruta equivalente: S/√(n−1) = S_c/√n. El toggle S/S_c por defecto está en S_c.
-- Frontera Z vs t: σ conocida → Z siempre (aunque n<30, así lo hacen los PDFs); σ desconocida → Z si n≥30, t si n<30 (gl = n−1; gl = n₁+n₂−2 para dos medias). ANOVA siempre es cola derecha: rechazar si F > F_α(k−1, N−k).
+- Frontera Z vs t: σ conocida → Z siempre (aunque n<30, así lo hacen los PDFs); σ desconocida → Z si n≥30, t si n<30 (gl = n−1; gl = n₁+n₂−2 para dos medias). ANOVA siempre es cola derecha: rechazar si F > F_α(k−1, N−k). **Excepción: Welch** — si en dos medias se seleccionan varianzas desiguales, se usa t de Welch con gl de Welch-Satterthwaite incluso con n ≥ 30 (ejemplo del `formulas.md`: n=50,75 → t=1.5945, gl≈122).
 - Chart.js con datos en formato objeto `{x, y}` **no acepta `null`** en el array (crashea con `Cannot read properties of null (reading 'x')`); los huecos se marcan con `NaN` y los saltos de línea se logran con datasets separados, no con `null` entre puntos.
-- Valores verificados contra los ejemplos resueltos de los PDFs (revisar si se toca la matemática): Z(σ)=1.55 con (203.5,200,16,50); t(Sc)=3.53 con (120,100,15,7,α=0.10,derecha), crítico 1.4398; Z(prop)=−2.80 con (0.775,0.8,2000); Z(2 medias)=−3.16 con (50,60,12,16,40,40); t(2 medias,Sc)=2.67 con (20,16,3,2,10,5,α=0.10), crítico 1.7709; **ANOVA** (Empleados 1–3 del PDF): SST=992, SSE=90, F=49.6, p=1.3806e-05, F_crít(0.05; 2,9)=4.25649473 → rechaza.
+- Valores verificados contra los ejemplos resueltos de los PDFs (revisar si se toca la matemática): Z(σ)=1.55 con (203.5,200,16,50); t(Sc)=3.53 con (120,100,15,7,α=0.10,derecha), crítico 1.4398; Z(prop)=−2.80 con (0.775,0.8,2000); Z(2 medias)=−3.16 con (50,60,12,16,40,40); t(2 medias,Sc)=2.67 con (20,16,3,2,10,5,α=0.10), crítico 1.7709; **ANOVA** (Empleados 1–3 del PDF): SST=992, SSE=90, F=49.6, p=1.3806e-05, F_crít(0.05; 2,9)=4.25649473 → rechaza; **Welch** (formulas.md, fondos de inversión): t=1.5945, gl≈122 (121.2242 real), p≈0.1134, crítico ±1.9797 → no rechaza (input con tipo S).
 
 ## Producto
 App web pedagógica, simple y minimalista, para contrastes de hipótesis estadísticos. Contexto: consultoría de estadística en español → textos de la UI en español.
@@ -25,7 +25,7 @@ App web pedagógica, simple y minimalista, para contrastes de hipótesis estadí
 
 ## Tests a implementar (alcance acordado)
 1. Una media: Z (varianza poblacional conocida) o t (desconocida).
-2. Diferencia de dos medias, muestras independientes: Z o t.
+2. Diferencia de dos medias, muestras independientes: Z o t (con varianzas iguales agrupadas o desiguales vía Welch).
 3. Una proporción (Z).
 4. Diferencia de dos proporciones (Z).
 5. ANOVA de un factor (F): k tratamientos con valores individuales por tratamiento; tabla ANOVA completa + gráfico de F + boxplot de grupos.
@@ -38,4 +38,4 @@ App web pedagógica, simple y minimalista, para contrastes de hipótesis estadí
 ## Referencia y verificación
 - Los PDFs `../Hipotesis de una muestra .pdf`, `../Hipótesis de 2 muestras .pdf` y `../Anovas.pdf`, más `../formulas.md` (en la carpeta padre, fuera de este directorio) definen la notación, los procedimientos y el ejemplo ANOVA de referencia.
 - No hay toolchain de build/test: el sitio es estático; la verificación es abrir la página en el navegador y comparar contra los ejemplos de los PDFs (valores listados arriba).
-- Si un cambio de estilo/JS/Python no se ve en el navegador, es caché: `index.html` enlaza `styles.css?v=3` y `app.js?v=4`, y `app.js` carga `stats_core.py?v=2` vía `fetch` para bustear la caché — bumpear el número ante cambios de CSS, JS o Python, o hacer Ctrl+F5.
+- Si un cambio de estilo/JS/Python no se ve en el navegador, es caché: `index.html` enlaza `styles.css?v=3` y `app.js?v=5`, y `app.js` carga `stats_core.py?v=2` vía `fetch` para bustear la caché — bumpear el número ante cambios de CSS, JS o Python, o hacer Ctrl+F5.

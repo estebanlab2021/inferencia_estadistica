@@ -20,6 +20,9 @@ El proyecto debe autogenerarse con la siguiente estructura limpia y estática:
 ## 3. Especificación de la Interfaz (UI)
 - **Selector de Test**: Un menú desplegable en la parte superior para elegir uno de los 5 tests del alcance (4 contrastes + ANOVA de un factor).
 - **Panel de Inputs dinámicos**: Cambia según el test seleccionado (ej: para una media pide: x̄, μ₀, σ o s, y n).
+- **Panel de diferencia de dos medias**: si las varianzas poblacionales son desconocidas, incluye un fieldset "Varianzas iguales / desiguales":
+  - **Iguales**: t con varianza agrupada (S_p/S_pc) — comportamiento original.
+  - **Desiguales**: t de Welch (sin agrupar, gl de Welch-Satterthwaite).
 - **Panel de ANOVA** (solo para ANOVA de un factor):
   - Selector de **número de tratamientos (k)** (2 a 8).
   - Por cada tratamiento: input de nombre (ej: "Empleado 1") y una **lista dinámica de inputs numéricos** con botones **＋ Agregar valor** / **− Quitar valor**. `n_i` se deduce de la cantidad de valores ingresados y se muestra en vivo (insignia "n_i = …"). Cambiar k preserva los datos ya digitados. Por defecto se carga el ejemplo de los PDFs.
@@ -50,6 +53,8 @@ Para ANOVA, `test_anova(grupos, alpha)` recibe `grupos = [{"nombre": str, "datos
 - `media_global`.
 - La distribución F se implementa con la beta incompleta regularizada (misma rutina `_beta_reg` de la t de Student), sin scipy.
 
+Para diferencia de dos medias, `test_diferencia_medias` recibe `varianzas_iguales=True` por defecto (varianza agrupada, comportamiento original). Con `varianzas_iguales=False` aplica el t de Welch (varianzas desiguales, gl de Welch-Satterthwaite).
+
 ## 5. Fórmulas Matemáticas y Criterios de Cálculo
 El motor estadístico y el renderizado visual de pasos deben basarse estrictamente en la siguiente tabla de referencia:
 
@@ -59,6 +64,15 @@ El motor estadístico y el renderizado visual de pasos deben basarse estrictamen
 | **Diferencia de Medias** | $Z=\frac{\bar{X}_{1}-\bar{X}_{2}}{\sqrt{\frac{S_{1}^{2}}{n_{1}}+ \frac{S_{2}^{2}}{n_{2}}}}$ | **Opción A (Varianzas muestrales):** $t = \frac{\bar{X}_{1}-\bar{X}_{2}}{S_{p} \sqrt{\frac{1}{n_{1}}+\frac{1}{n_{2}}}}$, donde $S_{p}=\sqrt{\frac{n_{1} S_{1}^{2} + n_{2} S_{2}^{2}}{n_{1}+n_{2}-2}}$<br><br>**Opción B (Cuasivarianzas / PDF):** $t = \frac{\bar{X}_{1}-\bar{X}_{2}}{S_{pc} \sqrt{\frac{1}{n_{1}}+\frac{1}{n_{2}}}}$, donde $S_{pc}=\sqrt{\frac{(n_{1}-1)S_{1c}^{2} + (n_{2}-1)S_{2c}^{2}}{n_{1}+n_{2}-2}}$ |
 | **Proporciones** | $Z = \frac{\hat{p}-P}{\sqrt{\frac{P(1-P)}{n}}}$ |
 | **Diferencia de Proporciones** | $Z = \frac{\hat{p}_{1}-\hat{p}_{2}}{\sqrt{P \cdot Q\left( \frac{1}{n_{1}}+ \frac{1}{n_{2}}\right)}}$, donde: $P = \frac{n_{1} \cdot \hat{p}_{1} + n_{2} \cdot \hat{p}_{2} }{n_{1} + n_{2}}$ y $Q=1-P$
+
+### T-Test de Welch (varianzas desiguales)
+
+- Aplica cuando las varianzas poblacionales son **desconocidas y desiguales** (no se agrupan).
+- Estadístico: $t = \dfrac{\bar{X}_1 - \bar{X}_2}{\sqrt{\dfrac{S_1^2}{n_1} + \dfrac{S_2^2}{n_2}}}$
+- Grados de libertad (Welch-Satterthwaite):
+  $gl = \dfrac{\left( \dfrac{S_1^2}{n_1} + \dfrac{S_2^2}{n_2} \right)^2}{\dfrac{\left(\dfrac{S_1^2}{n_1}\right)^2}{n_1-1} + \dfrac{\left(\dfrac{S_2^2}{n_2}\right)^2}{n_2-1}}$
+- Distribución: t de Student con gl como arriba. Rechazar H₀ según `alternativa`.
+- Nota: **no** hay corte a Z por n ≥ 30 cuando se selecciona "desiguales" — incluso con n1=50, n2=75 se usa t con gl de Welch (ejemplo de `formulas.md`: t=1.5945, gl≈122, p≈0.113).
 
 ### ANOVA de un factor (tabla y fórmulas)
 

@@ -13,7 +13,9 @@ Convenciones (PDFs de referencia, Prof. S. Araya Pizarro, U. de La Serena):
       t = (X̄ - mu0) / (Sc / sqrt(n)),  gl = n - 1
 - sigma desconocida, convencion S (varianza muestral con /n):
       t = (X̄ - mu0) / (S / sqrt(n-1))   [equivalente a la de arriba]
-- Dos medias, varianzas desconocidas iguales, convencion Sc (la del PDF):
+- Dos medias, varianzas desconocidas: con varianzas iguales se usa la
+  convencion Sc del PDF (agrupada); con desiguales, t de Welch
+  (Welch-Satterthwaite).
       Spc = sqrt(((n1-1)Sc1^2 + (n2-1)Sc2^2)/(n1+n2-2))
       t = (X̄1 - X̄2) / (Spc * sqrt(1/n1 + 1/n2)),  gl = n1+n2-2
 - Dos medias, convencion S: Sp = sqrt((n1*S1^2 + n2*S2^2)/(n1+n2-2))
@@ -480,9 +482,18 @@ def test_una_media(x_bar, mu0, sd, n, varianza_conocida, tipo_sd, alpha, alterna
     }
 
 
-def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_sd, alpha, alternativa):
-    """Contraste para la diferencia de dos medias (muestras independientes,
-    varianzas desconocidas asumidas iguales)."""
+def test_diferencia_medias(
+    x1, x2, sd1, sd2, n1, n2,
+    varianzas_conocidas, tipo_sd, alpha, alternativa,
+    varianzas_iguales=True,
+):
+    """Contraste para la diferencia de dos medias (muestras independientes).
+
+    - ``varianzas_iguales=True`` (default): t con varianza agrupada (S_p).
+    - ``varianzas_iguales=False``: t de Welch (varianzas desiguales),
+      con grados de libertad de Welch-Satterthwaite.
+    - Con varianzas poblacionales conocidas se usa Z siempre.
+    """
     n1, n2 = int(n1), int(n2)
     alpha = _validar_alpha(alpha)
     alternativa = _validar_alternativa(alternativa)
@@ -494,6 +505,7 @@ def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_s
         raise ValueError("Con varianzas desconocidas se requiere n₁, n₂ ≥ 2")
 
     raiz = "\\sqrt{\\frac{1}{" + _fmt(n1) + "} + \\frac{1}{" + _fmt(n2) + "}}"
+    welch = False
 
     if varianzas_conocidas:
         se = math.sqrt(sd1 * sd1 / n1 + sd2 * sd2 / n2)
@@ -503,6 +515,25 @@ def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_s
         )
         dist, gl = "Z", None
         nota = "Varianzas poblacionales conocidas → distribución normal estándar (Z)"
+    elif not varianzas_iguales:
+        # t de Welch (varianzas desconocidas y desiguales)
+        a = sd1 * sd1 / n1
+        b = sd2 * sd2 / n2
+        se = math.sqrt(a + b)
+        gl = (a + b) * (a + b) / (a * a / (n1 - 1) + b * b / (n2 - 1))
+        dist = "t"
+        variable = "S_{1}" if tipo_sd == "S" else "S_{c1}"
+        variable2 = "S_{2}" if tipo_sd == "S" else "S_{c2}"
+        se_latex = (
+            "SE = \\sqrt{\\frac{" + variable + "^{2}}{n_{1}} + \\frac{" + variable2
+            + "^{2}}{n_{2}}} = \\sqrt{\\frac{" + _fmt(sd1) + "^{2}}{" + _fmt(n1)
+            + "} + \\frac{" + _fmt(sd2) + "^{2}}{" + _fmt(n2) + "}} = " + _fmt(se)
+        )
+        nota = (
+            "Varianzas desiguales (t de Welch): gl = " + _fmt(gl)
+            + " (Welch-Satterthwaite)"
+        )
+        welch = True
     else:
         if tipo_sd == "S":
             sp = math.sqrt((n1 * sd1 * sd1 + n2 * sd2 * sd2) / (n1 + n2 - 2))
@@ -530,6 +561,11 @@ def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_s
                 "n₁ = " + str(n1) + ", n₂ = " + str(n2) + " ≥ 30 → aproximación Z "
                 "(la t de Student tiende a la normal)"
             )
+            se = math.sqrt(sd1 * sd1 / n1 + sd2 * sd2 / n2)
+            se_latex = (
+                "SE = \\sqrt{\\frac{" + _fmt(sd1) + "^{2}}{" + _fmt(n1) + "} + \\frac{"
+                + _fmt(sd2) + "^{2}}{" + _fmt(n2) + "}} = " + _fmt(se)
+            )
         else:
             dist, gl = "t", n1 + n2 - 2
             nota = (
@@ -551,6 +587,19 @@ def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_s
             + _fmt(sd1) + "^{2}}{" + _fmt(n1) + "} + \\frac{" + _fmt(sd2) + "^{2}}{"
             + _fmt(n2) + "}}} = " + _fmt(estadistico)
         )
+    elif welch:
+        # Nota: sustituida es la formula de Welch (sin agrupar).
+        variable = "S_{1}" if tipo_sd == "S" else "S_{c1}"
+        variable2 = "S_{2}" if tipo_sd == "S" else "S_{c2}"
+        general = (
+            r"t = \frac{\bar{X}_{1} - \bar{X}_{2}}"
+            r"{\sqrt{\frac{" + variable + r"^{2}}{n_{1}} + \frac{" + variable2 + r"^{2}}{n_{2}}}}"
+        )
+        sustituida = (
+            "t = \\frac{" + _fmt(x1) + " - " + _fmt(x2) + "}{\\sqrt{\\frac{"
+            + _fmt(sd1) + "^{2}}{" + _fmt(n1) + "} + \\frac{" + _fmt(sd2) + "^{2}}{"
+            + _fmt(n2) + "}}} = " + _fmt(estadistico)
+        )
     else:
         general = (
             r"t = \frac{\bar{X}_{1} - \bar{X}_{2}}{S_{pc} \sqrt{\frac{1}{n_{1}} + \frac{1}{n_{2}}}}"
@@ -565,9 +614,21 @@ def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_s
     h0, h1 = _hipotesis(0, alternativa, dos_muestras=True)
     resultado = dist + " = " + _fmt(estadistico)
 
+    # LaTeX de los grados de libertad de Welch (Welch-Satterthwaite)
+    gl_latex = None
+    if welch:
+        gl_latex = (
+            "gl = \\dfrac{\\left( \\dfrac{" + variable + "^{2}}{n_{1}} + \\dfrac{" + variable2
+            + "^{2}}{n_{2}} \\right)^{2}}{\\dfrac{\\left(\\dfrac{" + variable
+            + "^{2}}{n_{1}} \\right)^{2}}{n_{1} - 1} + \\dfrac{\\left(\\dfrac{" + variable2
+            + "^{2}}{n_{2}} \\right)^{2}}{n_{2} - 1}} = " + _fmt(gl)
+        )
+
     return {
         "test": "diferencia_medias",
         "distribucion": dist,
+        "varianzas_iguales": not welch,
+        "welch": welch,
         "gl": gl,
         "estadistico": estadistico,
         "p_valor": p_valor,
@@ -596,6 +657,7 @@ def test_diferencia_medias(x1, x2, sd1, sd2, n1, n2, varianzas_conocidas, tipo_s
             "sustituida": sustituida,
             "resultado": resultado,
             "p_valor": _pvalor_latex(simb, estadistico, alternativa, p_valor),
+            "gl": gl_latex,
         },
         "grafico": _grafico(dist, gl, estadistico, criticos, alternativa),
     }

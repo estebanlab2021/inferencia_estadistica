@@ -9,7 +9,7 @@ App web **pedagógica e interactiva** para contrastes de hipótesis estadístico
 | # | Prueba | Estadístico | Distribución |
 |---|--------|:-----------:|:------------:|
 | 1 | Una media (σ conocida o desconocida) | Z / t | Normal / t de Student |
-| 2 | Diferencia de dos medias (muestras independientes) | Z / t | Normal / t de Student |
+| 2 | Diferencia de dos medias (muestras independientes, varianzas iguales o desiguales vía Welch) | Z / t | Normal / t de Student |
 | 3 | Una proporción | Z | Normal |
 | 4 | Diferencia de dos proporciones | Z | Normal |
 | 5 | ANOVA de un factor | F | F de Fisher |
@@ -21,7 +21,7 @@ App web **pedagógica e interactiva** para contrastes de hipótesis estadístico
 - **ANOVA completo**: tabla ANOVA (Fuente de Variación · df · SC · CM · F · p-value · Valor crítico), gráfico de F y **boxplot por tratamiento, cada uno con su propio color**.
 - **Ingreso dinámico de datos**: en ANOVA se elige el número de tratamientos (*k*, de 2 a 8) y se agregan/quitan valores por tratamiento con botones ＋/−; *n_i* se actualiza en vivo y los datos se conservan al cambiar *k*.
 - **Convención pedagógica**: con σ desconocida se usa **S_c** (cuasivarianza, /(n−1)) por defecto — convención de los PDFs — con toggle explícito S/S_c.
-- **Frontera Z vs t** automática: σ conocida → Z siempre; σ desconocida → Z si n ≥ 30, t si n < 30.
+- **Frontera Z vs t** automática: σ conocida → Z siempre; σ desconocida → Z si n ≥ 30, t si n < 30. Excepción: al elegir varianzas desiguales en dos medias, se aplica el **t de Welch** (gl de Welch-Satterthwaite) siempre, incluso con n ≥ 30.
 - **100 % estática**: los cálculos corren en **Python dentro del navegador** (Pyodide / WebAssembly). Sin backend, sin servidor, sin build.
 
 ## 🚀 Demo en vivo
@@ -71,6 +71,7 @@ Los resultados están verificados contra los ejemplos resueltos del material de 
 | Proporción: p̂=0.775, P=0.8, n=2000 | Z = −2.80 |
 | Dos medias (Z): (50,60), (12,16), (40,40) | Z = −3.16 |
 | Dos medias (t, S_c): (20,16), (3,2), (10,5), α=0.10 | t = 2.67, crítico 1.7709 |
+| Welch (formulas.md, fondos): (11.4,10.9), (1.5,2), (50,75), S | t = 1.5945, gl ≈ 121.22, p = 0.1134 |
 | ANOVA (Empleados 1–3) | SST=992, SSE=90, **F=49.6, p=1.3806·10⁻⁵**, F_crít(0.05; 2,9)=4.2565 → rechaza H₀ |
 
 ## 📖 Referencias
